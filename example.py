@@ -63,10 +63,10 @@ class ErrorButton(Button):
 
 
 class StatusButton(Button):
-        """
-        Basic on click handler.
-        Only writes a status message in sublime text's status bar
-        """
+    """
+    Basic on click handler.
+    Only writes a status message in sublime text's status bar
+    """
     def __init__(self):
         super().__init__('Create Status Message')
 
@@ -89,11 +89,9 @@ class MyInteractiveView(InteractiveView):
         self.add_interactive_regions(LineBreak())
         self.add_interactive_regions(LineBreak())
         self.add_interactive_regions(GetInputButton())
-        self.add_interactive_regions(LineBreak())
-        self.add_interactive_regions(LineBreak())
+        self.add_interactive_regions(Space(4))
         self.add_interactive_regions(ErrorButton())
-        self.add_interactive_regions(LineBreak())
-        self.add_interactive_regions(LineBreak())
+        self.add_interactive_regions(Space(4))
         self.add_interactive_regions(StatusButton())
         self.add_interactive_regions(LineBreak())
         self.generate()
