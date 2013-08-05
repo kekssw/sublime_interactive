@@ -70,6 +70,7 @@ What they do is up to you.
   Methods and functions are too long
 - Better comments
 - Better examples
+- Redraw individual regions without having to redraw entire views contents
 
 ## Troubleshooting:
 
