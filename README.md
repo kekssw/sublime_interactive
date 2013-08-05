@@ -17,8 +17,8 @@ You'll need Sublime Text 3 (I'm sure I can alter it to work in both but I aimed 
 
 Clone this repository into your Sublime Text *Packages* directory.
 
-    git clone https://github.com/sligodave/sublime_remote_open.git RemoteOpen
-
+    git clone https://github.com/sligodave/sublime_interactive.git SublimeInteractive
+    
 Open Sublime Text 3
 
 Open Sublime Text 3's Python Prompt:
