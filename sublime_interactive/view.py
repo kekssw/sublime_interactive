@@ -43,11 +43,12 @@ class InteractiveView:
         self.set_name(self.label)
 
     def __getattr__(self, attr):
-        if self.view and hasattr(self.view, attr):
+        if hasattr(self, 'view') and hasattr(self.view, attr):
             return getattr(self.view, attr)
         raise AttributeError("%s does not exist on %s" % (attr, self.__class__.__name__))
 
     def add_interactive_regions(self, interactive_region):
+        interactive_region.view = self
         self.interactive_regions.append(interactive_region)
 
     def get_interactive_region_from_region(self, region):
@@ -62,12 +63,14 @@ class InteractiveView:
         keyed_regions = {}
         interactive_regions_with_regions = []
         for interactive_region in self.interactive_regions:
+            interactive_region.view = self
             if isinstance(interactive_region, MultiInteractiveRegion):
                 for sub_interactive_region in getattr(interactive_region, getattr(interactive_region, 'container', 'interactive_regions'), []):
                     for i in range(2):
                         if i == 1:
                             # Expand this to allow seperator be a list with arguements
                             sub_interactive_region = interactive_region.seperator()
+                        sub_interactive_region.view = self
                         interactive_region_as_string = str(sub_interactive_region)
                         new_end = last_end + len(interactive_region_as_string)
                         region = sublime.Region(last_end, new_end)

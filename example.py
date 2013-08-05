@@ -1,4 +1,7 @@
 
+import time
+import threading
+
 import sublime
 import sublime_plugin
 
@@ -6,7 +9,7 @@ import sublime_plugin
 from .sublime_interactive.commands import SublimeInteractiveSetViewContentsCommand
 from .sublime_interactive.event_listeners import SublimeInteractiveEventListener
 from .sublime_interactive.view import InteractiveView
-from .sublime_interactive.regions import Button, Space, AnyString, LineBreak, HorizontalRule, OrderedList, UnOrderedList
+from .sublime_interactive.regions import Button, Space, AnyString, LineBreak, HorizontalRule, OrderedList, UnOrderedList, InteractiveRegion
 
 class GetInputButton(Button):
     def __init__(self):
@@ -77,6 +80,29 @@ class ErrorButton(Button):
         self.del_view_highlight()
 
 
+class ProgressBar(InteractiveRegion):
+    scope = 'comment'
+    flags = sublime.DRAW_OUTLINED | sublime.DRAW_NO_FILL
+    def __init__(self, width=50):
+        self.width = width
+        super().__init__()
+
+    def __str__(self):
+        percentage = int(100 * (self.view.progress / self.view.total))
+        content = '\u25A0' * (int((self.width / 100) * percentage))
+        content += ' ' * (self.width - int((self.width / 100) * percentage))
+        return content
+
+
+class ProgressPercentage(InteractiveRegion):
+    def __init__(self):
+        super().__init__()
+
+    def __str__(self):
+        percentage = 100 * (self.view.progress / self.view.total)
+        return '%d%%' % (percentage)
+
+
 class StatusButton(Button):
     """
     Basic on click handler.
@@ -90,6 +116,16 @@ class StatusButton(Button):
         self.add_view_highlight()
         sublime.status_message('This is an status message')
         self.del_view_highlight()
+
+
+class DownloadButton(Button):
+    def __init__(self):
+        super().__init__('Start Download')
+
+    def on_click(self, interactive_region):
+        print('Starting dummy download')
+        downloader = Downloader(self.view)
+        downloader.start()
 
 
 class MyInteractiveView(InteractiveView):
@@ -118,7 +154,28 @@ class MyInteractiveView(InteractiveView):
         self.add_interactive_regions(UnOrderedList(['Item One', 'Item Two', 'Item Three']))
         self.add_interactive_regions(LineBreak(2))
 
+        self.total = 100
+        self.progress = 0
+        self.add_interactive_regions(DownloadButton())
+        self.add_interactive_regions(LineBreak(1))
+        self.add_interactive_regions(ProgressBar())
+        self.add_interactive_regions(Space(2))
+        self.add_interactive_regions(ProgressPercentage())
+        self.add_interactive_regions(LineBreak(2))
+
         self.generate()
+
+
+class Downloader(threading.Thread):
+    def __init__(self, view):
+        self.view = view
+        super().__init__()
+
+    def run(self):
+        while self.view.progress < self.view.total:
+            time.sleep(.1)
+            self.view.progress += 1
+            self.view.generate()
 
 
 class MyInteractiveViewStartCommand(sublime_plugin.WindowCommand):

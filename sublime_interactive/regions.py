@@ -19,7 +19,7 @@ class InteractiveRegion:
         self.view = None
 
     def __getattr__(self, attr):
-        if self.region and hasattr(self.region, attr):
+        if hasattr(self, 'region') and hasattr(self.region, attr):
             return getattr(self.region, attr)
         raise AttributeError("%s does not exist on %s" % (attr, self.__class__.__name__))
 

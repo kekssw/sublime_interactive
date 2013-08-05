@@ -71,6 +71,11 @@ What they do is up to you.
 - Better comments
 - Better examples
 
+## Troubleshooting:
+
+- I've noticed that when you click "Ok" on a popup error message, it'll register as a click again, when the prompt goes away and the cursor is returned to the view. I'm not sure there is much I can do about that. It will probably be up to the implementor to
+record flags to catch such events.
+
 ## Issues / Suggestions:
 
 Fire them on! I'll make fixes as they are pointed out and will consider any request for updates.
