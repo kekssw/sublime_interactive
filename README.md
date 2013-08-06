@@ -74,6 +74,7 @@ What they do is up to you.
 
 - I've noticed that when you click "Ok" on a popup error message, it'll register as a click again, when the prompt goes away and the cursor is returned to the view. I'm not sure there is much I can do about that. It will probably be up to the implementor to
 record flags to catch such events. It doesn't appear to happen all the time. Presumably it's down to click speed and cursor position or something like that.
+- If more than one iregion is getting drawn at the same time. Things can get out of line. I may investigate a queue for the draw command. To see this in action. Use the "Get User Input" button while the progress bar is running.
 
 ## Issues / Suggestions:
 
