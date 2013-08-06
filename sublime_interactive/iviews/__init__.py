@@ -86,12 +86,10 @@ class BaseIView:
     def has_iregion(self, iregion):
         return iregion in self.iregions
 
-    def draw(self, subset=None):
+    def draw(self):
         self.drawn = True
         self.view.set_name(self.label)
-        if subset is None:
-            subset = 0
-        for iregion in self.iregions[subset:]:
+        for iregion in self.iregions:
             iregion.draw()
 
     def process_click(self):
