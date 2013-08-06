@@ -36,8 +36,8 @@ class GetInputButton(Button):
                 if not hasattr(self.iview, 'temp_example_container'):
                     line_breaks = LineBreak(2)
                     text = GenericIRegion('You entered "%s"' % user_input)
-                    self.iview.add_iregion_index(7, line_breaks)
-                    self.iview.add_iregion_index(8, text)
+                    self.iview.add_iregion_index(6, line_breaks)
+                    self.iview.add_iregion_index(7, text)
                     self.iview.temp_example_container = [line_breaks, text]
                 else:
                     self.iview.temp_example_container[1].content = 'You entered "%s"' % user_input
@@ -107,7 +107,7 @@ class ProgressBar(BaseIRegion):
         super().__init__()
 
     def __str__(self):
-        content = '\u25A0' * (int((self.width / 100) * self.percentage))
+        content = '-' * (int((self.width / 100) * self.percentage))
         content += ' ' * (self.width - int((self.width / 100) * self.percentage))
         return content
 
