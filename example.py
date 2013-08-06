@@ -6,22 +6,24 @@ import sublime
 import sublime_plugin
 
 # import .webfaction
-from .sublime_interactive.commands import SublimeInteractiveSetViewContentsCommand
+from .sublime_interactive.commands import SublimeInteractiveUpdateViewCommand
 from .sublime_interactive.event_listeners import SublimeInteractiveEventListener
-from .sublime_interactive.view import InteractiveView
-from .sublime_interactive.regions import Button, Space, AnyString, LineBreak, HorizontalRule, OrderedList, UnOrderedList, InteractiveRegion
+from .sublime_interactive.iviews import BaseIView
+from .sublime_interactive.iregions import BaseIRegion, GenericIRegion, Button,\
+                                            Space, LineBreak, HorizontalRule
 
 class GetInputButton(Button):
     def __init__(self):
-        super().__init__('Get User Input', min_width=50)
+        super().__init__(label='Get User Input', min_width=30)
 
-    def on_click(self, interactive_region):
+    def on_click(self, iregion):
         """
         Prompts the user for input when clicked.
         """
-        self.add_view_highlight()
+        print('Clicked - Get User Input')
+        self.set_highlighted_region()
         self.get_input()
-        self.del_view_highlight()
+        self.del_highlighted_region()
 
     def get_input(self, user_input=None):
         # it is str, then not the first run, test the input
@@ -30,19 +32,22 @@ class GetInputButton(Button):
             if user_input:
                 print('Adding User Input Region from View')
                 # Test to see if this is the first time this button was run.
-                # If it was then we have to add our AnyString Region to the end of the view.
-                if isinstance(self.view.interactive_regions[-1], LineBreak):
-                    self.view.add_interactive_regions(AnyString())
-                # Set the text in the AnyString region at the end of the view
-                self.view.interactive_regions[-1].content = 'You entered "%s"' % user_input
-                # Regenerate the view and it's regions
-                self.view.generate()
+                # If it was then we have to add our GenericIRegion Region to the end of the view.
+                if not hasattr(self.iview, 'temp_example_container'):
+                    line_breaks = LineBreak(2)
+                    text = GenericIRegion('You entered "%s"' % user_input)
+                    self.iview.add_iregion_index(7, line_breaks)
+                    self.iview.add_iregion_index(8, text)
+                    self.iview.temp_example_container = [line_breaks, text]
+                else:
+                    self.iview.temp_example_container[1].content = 'You entered "%s"' % user_input
+                    self.iview.temp_example_container[1].draw()
                 # End
                 return
             # No input, write error
             sublime.error_message('Please enter input')
         # Prompt the user for input
-        self.view.window().show_input_panel(
+        self.iview.view.window().show_input_panel(
             'Input',
             '',
             self.get_input,
@@ -53,21 +58,21 @@ class GetInputButton(Button):
 
 class ClearInputButton(Button):
     def __init__(self):
-        super().__init__('Clear User Input', min_width=50)
+        super().__init__(label='Clear User Input', min_width=30)
 
-    def on_click(self, interactive_region):
+    def on_click(self, iregion):
         print('Clearing User Input Region from View')
-        self.add_view_highlight()
-        if getattr(self.view.interactive_regions[-1], 'content', '').startswith('You entered '):
-            del self.view.interactive_regions[-1]
-            self.view.generate()
-        self.del_view_highlight()
-
+        self.set_highlighted_region()
+        if hasattr(self.iview, 'temp_example_container'):
+            for iregion in self.iview.temp_example_container:
+                self.iview.del_iregion(iregion)
+            del self.iview.temp_example_container
+        self.del_highlighted_region()
 
 
 class ErrorButton(Button):
     def __init__(self):
-        super().__init__('Create Error Message', min_width=50)
+        super().__init__(label='Create Error Message', min_width=30)
 
     def on_click(self, interactive_region):
         """
@@ -75,32 +80,9 @@ class ErrorButton(Button):
         Only raises an error message in sublime text
         """
         print('Creating error message prompt')
-        self.add_view_highlight()
+        self.set_highlighted_region()
         sublime.error_message('This is an error message')
-        self.del_view_highlight()
-
-
-class ProgressBar(InteractiveRegion):
-    scope = 'comment'
-    flags = sublime.DRAW_OUTLINED | sublime.DRAW_NO_FILL
-    def __init__(self, width=50):
-        self.width = width
-        super().__init__()
-
-    def __str__(self):
-        percentage = int(100 * (self.view.progress / self.view.total))
-        content = '\u25A0' * (int((self.width / 100) * percentage))
-        content += ' ' * (self.width - int((self.width / 100) * percentage))
-        return content
-
-
-class ProgressPercentage(InteractiveRegion):
-    def __init__(self):
-        super().__init__()
-
-    def __str__(self):
-        percentage = 100 * (self.view.progress / self.view.total)
-        return '%d%%' % (percentage)
+        self.del_highlighted_region()
 
 
 class StatusButton(Button):
@@ -109,78 +91,170 @@ class StatusButton(Button):
     Only writes a status message in sublime text's status bar
     """
     def __init__(self):
-        super().__init__('Create Status Message', min_width=50)
+        super().__init__(label='Create Status Message', min_width=30)
 
-    def on_click(self, interactive_region):
+    def on_click(self, iregion):
         print('Creating status message in status bar')
-        self.add_view_highlight()
+        self.set_highlighted_region()
         sublime.status_message('This is an status message')
-        self.del_view_highlight()
+        self.del_highlighted_region()
+
+
+class ProgressBar(BaseIRegion):
+    def __init__(self):
+        self.percentage = 0
+        self.width = 50
+        super().__init__()
+
+    def __str__(self):
+        content = '\u25A0' * (int((self.width / 100) * self.percentage))
+        content += ' ' * (self.width - int((self.width / 100) * self.percentage))
+        return content
+
+
+class ProgressPercentage(BaseIRegion):
+    def __init__(self):
+        self.percentage = 0
+        super().__init__()
+
+    def __str__(self):
+        return '%d%%' % (self.percentage)
 
 
 class DownloadButton(Button):
     def __init__(self):
-        super().__init__('Start Download')
+        super().__init__(label='Start Download')
 
-    def on_click(self, interactive_region):
+    def on_click(self, iregion):
         print('Starting dummy download')
-        downloader = Downloader(self.view)
+        self.set_highlighted_region()
+        self.disabled = True
+        # We know the bar is two iregions after the download button
+        progress_bar_iregion_index = self.iview.get_iregion_index(self) + 2
+        progress_bar_iregion = self.iview.get_iregion(progress_bar_iregion_index)
+        progress_percentage_iregion_index = progress_bar_iregion_index + 2
+        progress_percentage_iregion = self.iview.get_iregion(progress_percentage_iregion_index)
+
+        downloader = Downloader(100, self, progress_bar_iregion, progress_percentage_iregion)
         downloader.start()
 
 
-class MyInteractiveView(InteractiveView):
+class Downloader(threading.Thread):
+    def __init__(self, total, button, progress_bar_iregion, progress_percentage_iregion):
+        self.total = total
+        self.button = button
+        self.progress_bar_iregion = progress_bar_iregion
+        self.progress_percentage_iregion = progress_percentage_iregion
+        super().__init__()
+
+    def run(self):
+        done = 0
+        while done <= self.total:
+            percentage = 100 * (done / self.total)
+            self.progress_bar_iregion.percentage = percentage
+            self.progress_percentage_iregion.percentage = percentage
+            self.progress_bar_iregion.draw()
+            self.progress_percentage_iregion.draw()
+            done += 1
+            time.sleep(.02)
+        self.button.del_highlighted_region()
+        self.button.disabled = False
+
+
+class TextWithBorder(GenericIRegion):
+    """
+    An IRegion that extends the generic iregion with
+    a border when it's drawn
+    """
+    scope = 'comment'
+    flags = sublime.DRAW_OUTLINED | sublime.DRAW_NO_FILL
+    def __init__(self, content):
+        super().__init__(content)
+
+
+class ExampleIView(BaseIView):
     """
     Example Interactive View.
     Really, the skys the limit.
     This has a title, a horizontal rule and then three buttons.
     """
     def __init__(self, window=None):
-        super().__init__(label='My Interactive View', window=window)
-        self.add_interactive_regions(AnyString('This is my interactive view\n'))
-        self.add_interactive_regions(HorizontalRule())
-        self.add_interactive_regions(LineBreak())
-        self.add_interactive_regions(LineBreak())
-        self.add_interactive_regions(GetInputButton())
-        self.add_interactive_regions(Space(4))
-        self.add_interactive_regions(ClearInputButton())
-        self.add_interactive_regions(LineBreak(2))
-        self.add_interactive_regions(ErrorButton())
-        self.add_interactive_regions(Space(4))
-        self.add_interactive_regions(StatusButton())
-        self.add_interactive_regions(LineBreak(2))
+        super().__init__(
+            label='Example IView',
+            window=window,
+            settings={
+                "rulers": [],
+                "highlight_line": False,
+                "always_show_minimap_viewport": False,
+                "fade_fold_buttons": True,
+                "caret_style": 'solid'
+            }
+        )
 
-        self.add_interactive_regions(OrderedList(['Item One', 'Item Two', 'Item Three'], right_padding=': '))
-        self.add_interactive_regions(LineBreak(2))
-        self.add_interactive_regions(UnOrderedList(['Item One', 'Item Two', 'Item Three']))
-        self.add_interactive_regions(LineBreak(2))
+        # Title text at the top of the view and horizontal line
+        self.add_iregion(GenericIRegion('This is an Example IView\n'))
+        self.add_iregion(HorizontalRule(64))
+        self.add_iregion(LineBreak(2))
 
-        self.total = 100
-        self.progress = 0
-        self.add_interactive_regions(DownloadButton())
-        self.add_interactive_regions(LineBreak(1))
-        self.add_interactive_regions(ProgressBar())
-        self.add_interactive_regions(Space(2))
-        self.add_interactive_regions(ProgressPercentage())
-        self.add_interactive_regions(LineBreak(2))
+        # Input and Clear button
+        # The Input button prompts the user for input and creates a new
+        # region to display the input
+        # The clear button, removes the newly displayed input if present
+        self.add_iregion(GetInputButton())
+        self.add_iregion(Space(4))
+        self.add_iregion(ClearInputButton())
+        self.add_iregion(LineBreak(2))
 
-        self.generate()
+        # ErrorButton Status Button
+        # The error button triggers a sublime text error message
+        # The status button triggers a sublime text status message
+        self.add_iregion(ErrorButton())
+        self.add_iregion(Space(4))
+        self.add_iregion(StatusButton())
+        self.add_iregion(LineBreak(2))
+
+        # DownloadButton ProgressBar ProgressPercentage
+        # When you click the download button, it threads off a fake
+        # download process and updates the bar and percentage as it goes
+        self.add_iregion(DownloadButton())
+        self.add_iregion(GenericIRegion('\n\n| '))
+        self.add_iregion(ProgressBar())
+        self.add_iregion(GenericIRegion(' | '))
+        self.add_iregion(ProgressPercentage())
+        self.add_iregion(LineBreak(2))
+
+        # Button Space Text Space Button
+        # First button hides the text.
+        # Second button shows the text.
+        text = TextWithBorder('TEXT')
+        self.add_iregion(
+            Button(
+                'Hide Text >',
+                on_click=lambda x: text.hide(),
+                min_width=20,
+                right_padding=1
+            )
+        )
+        self.add_iregion(Space())
+        self.add_iregion(text)
+        self.add_iregion(Space())
+        self.add_iregion(
+            Button(
+                '< Show Text',
+                on_click=lambda x: text.show(),
+                min_width=20,
+                left_padding=1
+            )
+        )
+        self.add_iregion(LineBreak())
+
+        # Draw all the iregions in the iview
+        self.draw()
 
 
-class Downloader(threading.Thread):
-    def __init__(self, view):
-        self.view = view
-        super().__init__()
-
-    def run(self):
-        while self.view.progress < self.view.total:
-            time.sleep(.1)
-            self.view.progress += 1
-            self.view.generate()
-
-
-class MyInteractiveViewStartCommand(sublime_plugin.WindowCommand):
+class ExampleIViewStartCommand(sublime_plugin.WindowCommand):
     """
-    Sublime Text Command to instantiate the Interactive View
+    Sublime Text Command to instantiate the IView
     """
     def run(self):
-        MyInteractiveView(self.window)
+        ExampleIView(self.window)

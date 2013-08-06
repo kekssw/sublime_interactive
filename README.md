@@ -18,13 +18,13 @@ You'll need Sublime Text 3 (I'm sure I can alter it to work in both but I aimed 
 Clone this repository into your Sublime Text *Packages* directory.
 
     git clone https://github.com/sligodave/sublime_interactive.git SublimeInteractive
-    
+
 Open Sublime Text 3
 
 Open Sublime Text 3's Python Prompt:
 
 	CTRL + `
-	Type: window.run_command('my_interactive_view_start')
+	Type: window.run_command('example_iView_start')
 
 This should open a new Read Only view, with the content of the example view present.
 
@@ -38,15 +38,15 @@ Remember, it's still very much a work in pregress.
 
 It's not very well commented yet.
 
-You basically need a class that extends InteractiveView.
+You basically need a class that extends IView.
 
-You will need a WindowCommand that will instanciate it when it is run.
+You will need a WindowCommand that will instantiate it when it is run.
 
-You then populate the interactive view with interactive regions.
+You then populate the IView with IRegions.
 
 Like Buttons, Text, LineBreaks, Horizontal Rules etc.
 
-You can give each Interactive Region an "on_click" action.
+You can give each IRegion an "on_click" action.
 
 Have fun, I'll document it better as I get further along. I just wanted to get it uploaded so I didn't lose any work.
 
@@ -66,16 +66,14 @@ What they do is up to you.
 
 ## Todo:
 
-- Better naming of the InteractiveRegions and InteractiveViews etc.
-  Methods and functions are too long
-- Better comments
+- Comment the code completely
+- Documentation
 - Better examples
-- Redraw individual regions without having to redraw entire views contents
 
 ## Troubleshooting:
 
 - I've noticed that when you click "Ok" on a popup error message, it'll register as a click again, when the prompt goes away and the cursor is returned to the view. I'm not sure there is much I can do about that. It will probably be up to the implementor to
-record flags to catch such events.
+record flags to catch such events. It doesn't appear to happen all the time. Presumably it's down to click speed and cursor position or something like that.
 
 ## Issues / Suggestions:
 

@@ -1,11 +1,11 @@
 
 import sublime_plugin
 
-from .view import SUBLIME_INTERACTIVE_VIEWS
+from .iviews import SUBLIME_INTERACTIVE_IVIEWS
 
 class SublimeInteractiveEventListener(sublime_plugin.EventListener):
     def on_selection_modified(self, view):
         settings = view.settings()
-        if settings.has('sublime_interactive_view'):
-            SUBLIME_INTERACTIVE_VIEWS[
-                            settings.get('sublime_interactive_view')].process_click()
+        if settings.has('sublime_interactive_iview'):
+            SUBLIME_INTERACTIVE_IVIEWS[
+                            settings.get('sublime_interactive_iview')].process_click()
