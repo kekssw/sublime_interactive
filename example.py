@@ -235,7 +235,7 @@ class ExampleIView(BaseIView):
                     }
                 },
                 formatter=rectangle,
-                formatter_kwargs={'min_width': 64, 'left_padding': 0}
+                formatter_kwargs={'min_width': 63, 'left_padding': 0}
             )
         )
         self.add_iregion(LineBreak(2))
@@ -264,7 +264,7 @@ class ExampleIView(BaseIView):
                     }
                 },
                 formatter=rectangle,
-                formatter_kwargs={'min_width': 64, 'left_padding': -1}
+                formatter_kwargs={'min_width': 63, 'left_padding': -1}
             )
         )
         self.add_iregion(LineBreak(2))
@@ -293,7 +293,7 @@ class ExampleIView(BaseIView):
                     }
                 },
                 formatter=rectangle,
-                formatter_kwargs={'min_width': 64, 'right_padding': 0}
+                formatter_kwargs={'min_width': 63, 'right_padding': 0}
             )
         )
         self.add_iregion(LineBreak(2))

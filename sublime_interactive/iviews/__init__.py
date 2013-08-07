@@ -43,6 +43,7 @@ class BaseIView:
             'line_numbers': False,
             'draw_white_space': 'none',
             'gutter': False,
+            'word_wrap': False,
             'indent_guide_options': [],
             'color_scheme': default_theme_path
         }
