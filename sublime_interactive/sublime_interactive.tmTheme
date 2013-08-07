@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>name</key>
+    <string>Sublime Interactive Default Theme</string>
+    <key>settings</key>
+    <array>
+        <dict>
+            <key>settings</key>
+            <dict>
+                <key>background</key>
+                <string>#ffffff</string>
+                <key>caret</key>
+                <string>#ffffff</string>
+                <key>foreground</key>
+                <string>#000000</string>
+            </dict>
+        </dict>
+        <!--
+        - background controls the color of the background or border
+        - foreground controls the color of the text but only when the background is filled
+          - So the text color will be the forground color from the main setting when there is no background
+        - caret controls the color of the cursor
+        -->
+        <dict>
+            <key>name</key>
+            <string>Button</string>
+            <key>scope</key>
+            <string>button</string>
+            <key>settings</key>
+            <dict>
+                <key>background</key>
+                <string>#c5c5c5</string>
+                <key>foreground</key>
+                <string>#000000</string>
+                <key>caret</key>
+                <string>#c5c5c5</string>
+            </dict>
+        </dict>
+        <dict>
+            <key>name</key>
+            <string>Button Highlight</string>
+            <key>scope</key>
+            <string>button.highlight</string>
+            <key>settings</key>
+            <dict>
+                <key>background</key>
+                <string>#565656</string>
+                <key>foreground</key>
+                <string>#ffffff</string>
+                <key>caret</key>
+                <string>#565656</string>
+            </dict>
+        </dict>
+    </array>
+    <key>uuid</key>
+    <string>9022EC4A-FD43-93AA-EC9C-A3958CC2ED8A</string>
+</dict>
+</plist>

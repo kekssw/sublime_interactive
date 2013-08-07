@@ -66,9 +66,12 @@ What they do is up to you.
 
 ## Todo:
 
-- Comment the code completely
-- Documentation
-- Better examples
+- Comment the code completely (Code has gotten complicated to track all the regions etc, comments are definitely needed)
+- Documentation (Code has gotten complicated, so some documentation is definitely needed)
+- Better examples (Really needs very basic examples up to complicated one)
+- Better exception handling and testing for corner cases
+- Expan IRegion 'shape' option, so we can expand white space to clean region shapes. Allow for the supply of a class, as well as a string/shape name.
+- Tests (Some ares can be tested and some requirements can be mocked)
 
 ## Troubleshooting:
 

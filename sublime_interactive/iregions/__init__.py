@@ -2,33 +2,82 @@
 import sublime
 
 from ..errors import SublimeInteractiveError
+from ..formatters import rectangle
 
 
 class BaseIRegion:
-    scope = ''
-    icon = ''
-    flags = sublime.DRAW_NO_OUTLINE | sublime.DRAW_NO_FILL
-    highlight_flags = None
-
-    def __init__(self, on_click=None, region=None, iview=None):
-        if on_click is not None:
-            self.on_click = on_click
+    def __init__(
+        self,
+        process=None,
+        pre_process=None,
+        post_process=None,
+        iview=None,
+        styles=None,
+        style_name='__default__',
+        scope='',
+        icon='',
+        flags=sublime.DRAW_NO_OUTLINE | sublime.DRAW_NO_FILL,
+        formatter=None,
+        formatter_kwargs=None
+    ):
         self.iview = iview
         self.key = 'IRegion-%s-%s' % (self.__class__.__name__, id(self))
-        self.highlighted = False
+
+        if pre_process is not None:
+            self.pre_process = pre_process
+        if process is not None:
+            self.process = process
+        if post_process is not None:
+            self.post_process = post_process
+
+        self.formatter = formatter
+        self.formatter_kwargs = {} if formatter_kwargs is None else formatter_kwargs
+
+        if styles is None:
+            styles = {}
+        if not style_name in styles:
+            styles[style_name] = {}
+        styles[style_name]['scope'] = styles[style_name].get('scope', scope)
+        styles[style_name]['icon'] = styles[style_name].get('icon', icon)
+        styles[style_name]['flags'] = styles[style_name].get('flags', flags)
+
+        self.styles = styles
+        self.style_name = style_name
+        self.style_history = []
+
         self.drawn = False
         self.disabled = False
         self.hidden = False
 
     def __len__(self):
-        return len(self.__str__())
+        length = len(str(self))
+        return length
 
     def __str__(self):
-        raise SublimeInteractiveError('Function "__str__" not implemented')
+        return self.get_formatted_data()
+
+    def get_formatted_data(self, formatter=None, formatter_kwargs=None):
+        data = self.get_data()
+        if formatter is None:
+            formatter = self.formatter
+        if not formatter is None:
+            if formatter_kwargs is None:
+                formatter_kwargs = self.formatter_kwargs
+            data = formatter(data, **formatter_kwargs)
+        return data
+
+    def get_data(self):
+        raise SublimeInteractiveError('Method "get_data" not implemented.')
 
     def last_end_point(self):
         index = self.iview.iregions.index(self)
-        return 0 if index == 0 else self.iview.iregions[index - 1].get_region().end()
+        # We can't just get the preceeding because of emply regions
+        for i in range(index - 1, -1, -1):
+            iregion = self.iview.iregions[i]
+            region = iregion.get_region()
+            if region is not None:
+                return region.end()
+        return 0
 
     def has_region(self):
         return self.get_region() is not None
@@ -40,53 +89,73 @@ class BaseIRegion:
         if regions:
             return regions[0]
 
-    def set_region(self, scope=None, icon=None, flags=None):
+    def set_region(self, style_name=None, scope=None, icon=None, flags=None):
         if not self.drawn:
             return
-        if scope is None:
-            scope = self.scope
-        if icon is None:
-            icon = self.icon
-        if flags is None:
-            flags = self.flags
+
         if self.key in self.iview.keys:
             self.del_region()
+
         last_end_point = self.last_end_point()
-        if self.hidden:
-            end = last_end_point
-        else:
-            end = last_end_point + len(self)
+        end = last_end_point + len(self)
+
         region = sublime.Region(last_end_point, end)
+
+        style_name = self.style_name if style_name is None else style_name
+        style = self.styles.get(style_name, {})
+        scope = style.get('scope',
+                        self.styles[self.style_name]['scope']) if scope is None else scope
+        icon = style.get('icon',
+                        self.styles[self.style_name]['icon']) if icon is None else icon
+        flags = style.get('flags',
+                        self.styles[self.style_name]['flags']) if flags is None else flags
+
         self.iview.view.add_regions(self.key, [region], scope, icon, flags)
+        self.style_history.append(
+            {
+                'style_name': style_name,
+                'scope': scope,
+                'icon': icon,
+                'flags': flags
+            }
+        )
+
         if not self.key in self.iview.keys:
             self.iview.keys.append(self.key)
+
         return region
 
-    def del_region(self):
+    def del_region(self, forget=False):
         if not self.drawn:
             return
         del self.iview.keys[self.iview.keys.index(self.key)]
+        if forget:
+            del self.style_history[-1]
         self.iview.view.erase_regions(self.key)
 
-    def set_highlighted_region(self):
-        if self.drawn and getattr(self, 'highlight_flags', False):
-            self.highlighted = True
-            self.set_region(flags=self.highlight_flags)
-
-    def del_highlighted_region(self, timeout=200):
-        if self.drawn:
-            self.highlighted = False
-            sublime.set_timeout_async(self.set_region, timeout)
+    def pop_region(self, **kwargs):
+        if not self.drawn:
+            return
+        self.del_region(forget=True)
+        last_style = self.style_history[-1] if self.style_history else {}
+        kwargs.update(last_style)
+        self.set_region(**kwargs)
 
     def hide(self):
         self.hidden = True
         if self.drawn:
-            self.draw()
+            self.undraw()
 
     def show(self):
         self.hidden = False
-        if self.drawn:
+        if self.iview.drawn:
             self.draw()
+
+    def enable(self):
+        self.disabled = False
+
+    def disable(self):
+        self.disabled = True
 
     def undraw(self):
         if not self.drawn:
@@ -100,20 +169,21 @@ class BaseIRegion:
                 'end': region.end()
             }
         )
-        self.del_region()
+        self.del_region(forget=True)
         self.drawn = False
 
     def draw(self):
-        data = str(self)
+        if self.hidden:
+            return
+        data = self.get_formatted_data()
+        last_style = self.style_history[-1] if self.style_history else {}
         if self.drawn:
             region = self.get_region()
             begin = region.begin()
             end = region.end()
-            self.del_region()
+            self.del_region(forget=True)
         else:
             begin = end = self.last_end_point()
-        if self.hidden:
-            data = ''
         self.iview.view.run_command(
             'sublime_interactive_update_view',
             {
@@ -123,14 +193,10 @@ class BaseIRegion:
             }
         )
         self.drawn = True
-        if hasattr(self,  'highlighted') and self.highlighted:
-            self.set_highlighted_region()
-        else:
-            self.set_region()
 
-    def on_click(self, iregion):
-        if hasattr(self, 'set_highlighted_region'):
-            self.set_highlighted_region()
+        self.set_region(**last_style)
+
+    def process(self, iregion):
         region = self.get_region()
         print('Clicked: %s - %d - %d:%d %d\n"""%s"""' % (
             self.key,
@@ -138,73 +204,85 @@ class BaseIRegion:
             region.begin(),
             region.end(),
             region.size(),
-            str(self)
+            self.get_formatted_data()
             )
         )
-        if hasattr(self, 'del_highlighted_region'):
-            self.del_highlighted_region()
+
+    def pre_process(self, iregion):
+        pass
+
+    def post_process(self, iregion):
+        pass
 
 
 class GenericIRegion(BaseIRegion):
-    def __init__(self, content='', on_click=None, region=None, iview=None):
+    def __init__(self, content='', **kwargs):
         self.content = content
-        super().__init__(on_click=on_click, region=region, iview=iview)
+        super().__init__(**kwargs)
 
-    def __str__(self):
+    def get_data(self):
         return str(self.content)
 
 
 class Space(GenericIRegion):
-    def __init__(self, width=1, on_click=None, region=None, iview=None):
-        super().__init__(content=' ' * width, on_click=on_click, region=region, iview=iview)
+    def __init__(self, width=1, **kwargs):
+        super().__init__(content=' ' * width, **kwargs)
 
 
 class LineBreak(GenericIRegion):
-    def __init__(self, amount=1, on_click=None, region=None, iview=None):
-        super().__init__(content='\n' * amount, on_click=on_click, region=region, iview=iview)
+    def __init__(self, amount=1, **kwargs):
+        super().__init__(content='\n' * amount, **kwargs)
 
 
 class HorizontalRule(GenericIRegion):
-    def __init__(self, width=100, on_click=None, region=None, iview=None):
-        super().__init__(content='-' * width, on_click=on_click, region=region, iview=iview)
+    def __init__(self, width=100, **kwargs):
+        super().__init__(content='-' * width, **kwargs)
 
 
 class Button(BaseIRegion):
-    scope = 'comment'
-    flags = sublime.DRAW_OUTLINED | sublime.DRAW_NO_FILL
-    highlight_flags = sublime.DRAW_NO_OUTLINE
-
     def __init__(
         self,
         label,
-        min_width=0,
-        left_padding=-1,
-        right_padding=-1,
-        on_click=None,
-        region=None,
-        iview=None
+        highlight_style_name='button.highlight',
+        **kwargs
     ):
         self.label = label
-        self.min_width = min_width
-        self.left_padding = left_padding
-        self.right_padding = right_padding
-        super().__init__(on_click=on_click, region=region, iview=iview)
+        self.highlight_style_name = highlight_style_name
 
-    def __str__(self):
-        as_str = ' ' * self.left_padding
-        as_str += self.label
-        as_str += ' ' * self.right_padding
-        button_length = len(as_str)
-        if button_length < self.min_width:
-            left = self.min_width - button_length
-            if self.left_padding == self.right_padding == -1:
-                left_padding = ' ' * (left // 2)
-                right_padding = (' ' * ((left // 2) + (left % 2)))
-            elif self.right_padding == -1:
-                left_padding = ''
-                right_padding = ' ' * left
-            else:
-                left_padding = ' ' * left
-                right_padding = ''
-            as_str = left_padding + as_str + right_padding
-        return as_str
+        kwargs['formatter'] = kwargs.get('formatter', rectangle)
+        formatter_kwargs = {
+            'min_width': -1,
+            'center': True,
+            'left_padding': -1,
+            'right_padding': -1
+        }
+        formatter_kwargs.update(kwargs.get('formatter_kwargs', {}))
+        kwargs['formatter_kwargs'] = formatter_kwargs
+
+        kwargs['style_name'] = kwargs.get('style_name', 'button')
+        kwargs['styles'] = kwargs.get('styles', {})
+
+        if not kwargs['style_name'] in kwargs['styles']:
+            kwargs['styles'][kwargs['style_name']] = {
+                'scope': 'button',
+                'flags': sublime.DRAW_NO_OUTLINE
+            }
+        if not highlight_style_name in kwargs['styles']:
+            kwargs['styles'][highlight_style_name] = {
+                'scope': 'button.highlight',
+                'flags': sublime.DRAW_NO_OUTLINE
+            }
+        super().__init__(**kwargs)
+
+    def get_data(self):
+        return self.label
+
+    def pre_process(self, iregion):
+        self.disable()
+        self.set_region(self.highlight_style_name)
+
+    def post_process(self, iregion):
+        def call():
+            self.pop_region()
+            self.enable()
+        sublime.set_timeout_async(call, 200)
