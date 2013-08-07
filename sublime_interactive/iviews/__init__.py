@@ -36,13 +36,14 @@ class BaseIView:
         default_theme_path = default_theme_path[len(packages_path) - 8:]
 
         default_settings = {
-            "rulers": [],
-            "highlight_line": False,
-            "fade_fold_buttons": True,
-            "caret_style": 'solid',
+            'rulers': [],
+            'highlight_line': False,
+            'fade_fold_buttons': True,
+            'caret_style': 'solid',
             'line_numbers': False,
+            'draw_white_space': 'none',
             'gutter': False,
-            "indent_guide_options": [],
+            'indent_guide_options': [],
             'color_scheme': default_theme_path
         }
         if settings is None:

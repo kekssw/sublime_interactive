@@ -18,9 +18,9 @@ class GetInputButton(Button):
         super().__init__(label='Get User Input', formatter_kwargs={'min_width': 30})
 
     def process(self, iregion):
-        """
+        '''
         Prompts the user for input when clicked.
-        """
+        '''
         super().process(iregion)
         self.get_input()
 
@@ -72,19 +72,19 @@ class ErrorButton(Button):
         super().__init__(label='Create Error Message', formatter_kwargs={'min_width': 30})
 
     def process(self, iregion):
-        """
+        '''
         Basic on click handler.
         Only raises an error message in sublime text
-        """
+        '''
         super().process(iregion)
         sublime.error_message('This is an error message')
 
 
 class StatusButton(Button):
-    """
+    '''
     Basic on click handler.
     Only writes a status message in sublime text's status bar
-    """
+    '''
     def __init__(self):
         super().__init__(label='Create Status Message', formatter_kwargs={'min_width': 30})
 
@@ -160,21 +160,21 @@ class Downloader(threading.Thread):
 
 
 class TextWithBorder(GenericIRegion):
-    """
+    '''
     An IRegion that extends the generic iregion with
     a border when it's drawn
-    """
+    '''
     def __init__(self, content):
         flags = sublime.DRAW_OUTLINED | sublime.DRAW_NO_FILL
         super().__init__(content, scope='comment', flags=flags)
 
 
 class ExampleIView(BaseIView):
-    """
+    '''
     Example Interactive View.
     Really, the skys the limit.
     This has a title, a horizontal rule and then three buttons.
-    """
+    '''
     def __init__(self, window=None):
         super().__init__(
             label='Example IView',
@@ -213,11 +213,11 @@ class ExampleIView(BaseIView):
         # 3 Bodies of text
         self.add_iregion(
             GenericIRegion(
-                """This is the first line in a body of text.
+                '''This is the first line in a body of text.
     This is the second line in the same body of text.
     This is the third line!
     Forth.
-    And fifth.""",
+    And fifth.''',
                 process=lambda x: x.set_region(
                     scope='button.highlight',
                     flags=sublime.DRAW_OUTLINED
@@ -242,11 +242,11 @@ class ExampleIView(BaseIView):
 
         self.add_iregion(
             GenericIRegion(
-                """This is the first line in a body of text.
+                '''This is the first line in a body of text.
     This is the second line in the same body of text.
     This is the third line!
     Forth.
-    And fifth.""",
+    And fifth.''',
                 process=lambda x: x.set_region(
                     scope='button.highlight',
                     flags=sublime.DRAW_OUTLINED
@@ -271,11 +271,11 @@ class ExampleIView(BaseIView):
 
         self.add_iregion(
             GenericIRegion(
-                """This is the first line in a body of text.
+                '''This is the first line in a body of text.
     This is the second line in the same body of text.
     This is the third line!
     Forth.
-    And fifth.""",
+    And fifth.''',
                 process=lambda x: x.set_region(
                     scope='button.highlight',
                     flags=sublime.DRAW_OUTLINED,
@@ -336,8 +336,8 @@ class ExampleIView(BaseIView):
 
 
 class ExampleIViewStartCommand(sublime_plugin.WindowCommand):
-    """
+    '''
     Sublime Text Command to instantiate the IView
-    """
+    '''
     def run(self):
         ExampleIView(self.window)

@@ -198,7 +198,7 @@ class BaseIRegion:
 
     def process(self, iregion):
         region = self.get_region()
-        print('Clicked: %s - %d - %d:%d %d\n"""%s"""' % (
+        print('Clicked: %s - %d - %d:%d %d\n\'\'\'%s\'\'\'' % (
             self.key,
             self.iview.view.sel()[0].begin(),
             region.begin(),
