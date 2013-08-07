@@ -26,7 +26,9 @@ Open Sublime Text 3's Python Prompt:
 	CTRL + `
 	Type: window.run_command('example_iView_start')
 
-This should open a new Read Only view, with the content of the example view present.
+This should open a new Read Only view, with the content of the example iview present.
+
+![Example IView](https://raw.github.com/sligodave/sublime_interactive/master/example_iview.png)
 
 You can click on the items present, they'll either print to the Python Console or do a few other things.
 
