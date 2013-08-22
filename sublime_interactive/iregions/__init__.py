@@ -107,11 +107,11 @@ class BaseIRegion:
         style_name = self.style_name if style_name is None else style_name
         style = self.styles.get(style_name, {})
         scope = style.get('scope',
-                        self.styles[self.style_name]['scope']) if scope is None else scope
+                        self.styles.get(self.style_name, {}).get('scope', '')) if scope is None else scope
         icon = style.get('icon',
-                        self.styles[self.style_name]['icon']) if icon is None else icon
+                        self.styles.get(self.style_name, {}).get('icon', '')) if icon is None else icon
         flags = style.get('flags',
-                        self.styles[self.style_name]['flags']) if flags is None else flags
+                        self.styles.get(self.style_name, {}).get('flags', sublime.DRAW_NO_OUTLINE | sublime.DRAW_NO_FILL)) if flags is None else flags
 
         self.iview.view.add_regions(self.key, [region], scope, icon, flags)
         self.style_history.append(
