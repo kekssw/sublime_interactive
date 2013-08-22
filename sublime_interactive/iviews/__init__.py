@@ -4,6 +4,8 @@ import os.path
 
 import sublime
 
+from ..iregions import BaseIRegion, GenericIRegion
+
 
 SUBLIME_INTERACTIVE_IVIEWS = []
 
@@ -72,8 +74,11 @@ class BaseIView:
         self.last_point = None
         self.keys = []
         self.drawn = False
+        self.disabled = False
 
     def add_iregion(self, iregion):
+        if not isinstance(iregion, BaseIRegion):
+            iregion = GenericIRegion(data=iregion)
         if iregion.iview is not None:
             raise SublimeInteractiveError('IRegion already associated with an IView')
         iregion.iview = self
@@ -81,7 +86,13 @@ class BaseIView:
         if self.drawn:
             iregion.draw()
 
+    def add_iregions(self, iregions):
+        for iregion in iregions:
+            self.add_iregion(iregion)
+
     def add_iregion_index(self, index, iregion):
+        if not isinstance(iregion, BaseIRegion):
+            iregion = GenericIRegion(data=iregion)
         if iregion.iview is not None:
             raise SublimeInteractiveError('IRegion already associated with an IView')
         iregion.iview = self
@@ -89,11 +100,23 @@ class BaseIView:
         if self.drawn:
             iregion.draw()
 
+    def add_iregions_index(self, index, iregions):
+        iregions.reverse()
+        for iregion in iregions:
+            self.add_iregion_index(index, iregion)
+
     def del_iregion(self, iregion):
         iregion.undraw()
         index = self.iregions.index(iregion)
         del self.iregions[index]
         iregion.iview = None
+
+    def del_iregions(self, iregions=None):
+        if iregions is None:
+            iregions = self.iregions[::]
+        while iregions:
+            iregion = iregions.pop()
+            self.del_iregion(iregion)
 
     def del_iregion_index(self, index):
         iregion = self.iregions[index]
@@ -114,12 +137,27 @@ class BaseIView:
         return iregion in self.iregions
 
     def draw(self):
+        if self.drawn:
+            self.undraw()
         self.drawn = True
         self.view.set_name(self.label)
         for iregion in self.iregions:
             iregion.draw()
 
+    def undraw(self):
+        for iregion in self.iregions:
+            iregion.undraw()
+        self.drawn = False
+
+    def disable(self):
+        self.disabled = True
+
+    def enable(self):
+        self.disabled = False
+
     def process(self):
+        if self.disabled:
+            return
         event_time = time.time()
         regions = self.view.sel()
         if not len(regions) == 1:
@@ -142,7 +180,7 @@ class BaseIView:
                 region = regions[0]
                 if region.contains(point) and not point == region.end():
                     iregion = [x for x in self.iregions if x.get_region() == region][0]
-                    if not getattr(iregion, 'disabled', False):
+                    if not iregion.disabled:
                         if hasattr(iregion, 'pre_process'):
                             iregion.pre_process(iregion)
                         if hasattr(iregion, 'process'):

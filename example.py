@@ -15,7 +15,7 @@ from .sublime_interactive.iregions import BaseIRegion, GenericIRegion, Button,\
 
 class GetInputButton(Button):
     def __init__(self):
-        super().__init__(label='Get User Input', formatter_kwargs={'min_width': 30})
+        super().__init__(data='Get User Input', formatter_kwargs={'min_width': 30})
 
     def process(self, iregion):
         '''
@@ -39,7 +39,7 @@ class GetInputButton(Button):
                     self.iview.add_iregion_index(7, line_breaks)
                     self.iview.temp_example_container = [line_breaks, text]
                 else:
-                    self.iview.temp_example_container[1].content = 'You entered "%s"' % user_input
+                    self.iview.temp_example_container[1].data = 'You entered "%s"' % user_input
                     self.iview.temp_example_container[1].draw()
                 # End
                 return
@@ -57,7 +57,7 @@ class GetInputButton(Button):
 
 class ClearInputButton(Button):
     def __init__(self):
-        super().__init__(label='Clear User Input', formatter_kwargs={'min_width': 30})
+        super().__init__(data='Clear User Input', formatter_kwargs={'min_width': 30})
 
     def process(self, iregion):
         super().process(iregion)
@@ -69,7 +69,7 @@ class ClearInputButton(Button):
 
 class ErrorButton(Button):
     def __init__(self):
-        super().__init__(label='Create Error Message', formatter_kwargs={'min_width': 30})
+        super().__init__(data='Create Error Message', formatter_kwargs={'min_width': 30})
 
     def process(self, iregion):
         '''
@@ -86,7 +86,7 @@ class StatusButton(Button):
     Only writes a status message in sublime text's status bar
     '''
     def __init__(self):
-        super().__init__(label='Create Status Message', formatter_kwargs={'min_width': 30})
+        super().__init__(data='Create Status Message', formatter_kwargs={'min_width': 30})
 
     def process(self, iregion):
         super().process(iregion)
@@ -100,9 +100,9 @@ class ProgressBar(BaseIRegion):
         super().__init__()
 
     def get_data(self):
-        content = '-' * (int((self.width / 100) * self.percentage))
-        content += ' ' * (self.width - int((self.width / 100) * self.percentage))
-        return content
+        data = '-' * (int((self.width / 100) * self.percentage))
+        data += ' ' * (self.width - int((self.width / 100) * self.percentage))
+        return data
 
 
 class ProgressPercentage(BaseIRegion):
@@ -116,7 +116,7 @@ class ProgressPercentage(BaseIRegion):
 
 class DownloadButton(Button):
     def __init__(self):
-        super().__init__(label='Start Download', formatter_kwargs={'min_width': 64})
+        super().__init__(data='Start Download', formatter_kwargs={'min_width': 64})
 
     def pre_process(self, iregion):
         pass
@@ -164,9 +164,9 @@ class TextWithBorder(GenericIRegion):
     An IRegion that extends the generic iregion with
     a border when it's drawn
     '''
-    def __init__(self, content):
+    def __init__(self, data):
         flags = sublime.DRAW_OUTLINED | sublime.DRAW_NO_FILL
-        super().__init__(content, scope='comment', flags=flags)
+        super().__init__(data=data, scope='comment', flags=flags)
 
 
 class ExampleIView(BaseIView):
@@ -213,7 +213,7 @@ class ExampleIView(BaseIView):
         # 3 Bodies of text
         self.add_iregion(
             GenericIRegion(
-                '''This is the first line in a body of text.
+                data='''This is the first line in a body of text.
     This is the second line in the same body of text.
     This is the third line!
     Forth.
@@ -242,7 +242,7 @@ class ExampleIView(BaseIView):
 
         self.add_iregion(
             GenericIRegion(
-                '''This is the first line in a body of text.
+                data='''This is the first line in a body of text.
     This is the second line in the same body of text.
     This is the third line!
     Forth.
@@ -271,7 +271,7 @@ class ExampleIView(BaseIView):
 
         self.add_iregion(
             GenericIRegion(
-                '''This is the first line in a body of text.
+                data='''This is the first line in a body of text.
     This is the second line in the same body of text.
     This is the third line!
     Forth.
@@ -314,7 +314,7 @@ class ExampleIView(BaseIView):
         text = TextWithBorder(' TEXT ')
         self.add_iregion(
             Button(
-                'Hide Text >',
+                data='Hide Text >',
                 process=lambda x: text.hide(),
                 formatter_kwargs={'min_width': 28, 'right_padding': 1}
             )
@@ -324,7 +324,7 @@ class ExampleIView(BaseIView):
         self.add_iregion(Space())
         self.add_iregion(
             Button(
-                '< Show Text',
+                data='< Show Text',
                 process=lambda x: text.show(),
                 formatter_kwargs={'min_width': 28, 'left_padding': 1}
             )

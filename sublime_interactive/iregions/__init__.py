@@ -8,6 +8,7 @@ from ..formatters import rectangle
 class BaseIRegion:
     def __init__(
         self,
+        data='',
         process=None,
         pre_process=None,
         post_process=None,
@@ -22,6 +23,8 @@ class BaseIRegion:
     ):
         self.iview = iview
         self.key = 'IRegion-%s-%s' % (self.__class__.__name__, id(self))
+
+        self.data = data
 
         if pre_process is not None:
             self.pre_process = pre_process
@@ -67,7 +70,7 @@ class BaseIRegion:
         return data
 
     def get_data(self):
-        raise SublimeInteractiveError('Method "get_data" not implemented.')
+        return self.data
 
     def last_end_point(self):
         index = self.iview.iregions.index(self)
@@ -193,7 +196,8 @@ class BaseIRegion:
             }
         )
         self.drawn = True
-
+        # When you draw something that is already drawn, we reset it's style to the style when you clicked draw.
+        # To force a restyleing, you must also do an undraw first.
         self.set_region(**last_style)
 
     def process(self, iregion):
@@ -216,37 +220,31 @@ class BaseIRegion:
 
 
 class GenericIRegion(BaseIRegion):
-    def __init__(self, content='', **kwargs):
-        self.content = content
-        super().__init__(**kwargs)
-
     def get_data(self):
-        return str(self.content)
+        return str(self.data)
 
 
 class Space(GenericIRegion):
     def __init__(self, width=1, **kwargs):
-        super().__init__(content=' ' * width, **kwargs)
+        super().__init__(data=' ' * width, **kwargs)
 
 
 class LineBreak(GenericIRegion):
     def __init__(self, amount=1, **kwargs):
-        super().__init__(content='\n' * amount, **kwargs)
+        super().__init__(data='\n' * amount, **kwargs)
 
 
 class HorizontalRule(GenericIRegion):
     def __init__(self, width=100, **kwargs):
-        super().__init__(content='-' * width, **kwargs)
+        super().__init__(data='-' * width, **kwargs)
 
 
 class Button(BaseIRegion):
     def __init__(
         self,
-        label,
         highlight_style_name='button.highlight',
         **kwargs
     ):
-        self.label = label
         self.highlight_style_name = highlight_style_name
 
         kwargs['formatter'] = kwargs.get('formatter', rectangle)
@@ -273,9 +271,6 @@ class Button(BaseIRegion):
                 'flags': sublime.DRAW_NO_OUTLINE
             }
         super().__init__(**kwargs)
-
-    def get_data(self):
-        return self.label
 
     def pre_process(self, iregion):
         self.disable()
