@@ -72,7 +72,6 @@ class BaseIView:
             self.add_iregion(iregion)
 
         self.last_event_time = 0
-        self.last_point = None
         self.keys = []
         self.drawn = False
         self.disabled = False
@@ -173,11 +172,10 @@ class BaseIView:
             self.view.sel().clear()
             return
         point = region.begin()
-        if point == self.last_point and event_time - self.last_event_time < 0.5:
+        if event_time - self.last_event_time < 0.5:
             self.view.sel().clear()
             return
         self.last_event_time = event_time
-        self.last_point = point
 
         for key in self.keys:
             regions = self.view.get_regions(key)
