@@ -4,6 +4,7 @@ import os.path
 
 import sublime
 
+from ..errors import SublimeInteractiveError
 from ..iregions import BaseIRegion, GenericIRegion
 
 
@@ -11,7 +12,8 @@ SUBLIME_INTERACTIVE_IVIEWS = []
 
 
 class BaseIView:
-    def __init__(self,
+    def __init__(
+        self,
         label=None,
         view=None,
         window=None,
@@ -27,7 +29,6 @@ class BaseIView:
 
         if syntax_file is not None:
             self.view.set_syntax_file(syntax_file)
-
 
         default_theme_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
@@ -101,6 +102,8 @@ class BaseIView:
             iregion.draw()
 
     def add_iregions_index(self, index, iregions):
+        if isinstance(index, BaseIRegion):
+            index = self.iregions.index(index)
         iregions.reverse()
         for iregion in iregions:
             self.add_iregion_index(index, iregion)
