@@ -92,6 +92,8 @@ class BaseIView:
             self.add_iregion(iregion)
 
     def add_iregion_index(self, index, iregion):
+        if isinstance(index, BaseIRegion):
+            index = self.iregions.index(index)
         if not isinstance(iregion, BaseIRegion):
             iregion = GenericIRegion(data=iregion)
         if iregion.iview is not None:
