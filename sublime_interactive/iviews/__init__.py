@@ -18,6 +18,7 @@ class BaseIView:
         view=None,
         window=None,
         iregions=None,
+        igroups=None,
         settings=None,
         syntax_file=None
     ):
@@ -71,6 +72,10 @@ class BaseIView:
         for iregion in iregions:
             self.add_iregion(iregion)
 
+        if igroups is None:
+            igroups = []
+        self.igroups = igroups
+
         self.last_event_time = 0
         self.keys = []
         self.drawn = False
@@ -82,13 +87,18 @@ class BaseIView:
         if iregion.iview is not None:
             raise SublimeInteractiveError('IRegion already associated with an IView')
         iregion.iview = self
+        if hasattr(iregion, 'igroup') and not iregion.igroup in self.igroups:
+            self.igroups.append(iregion.igroup)
         self.iregions.append(iregion)
         if self.drawn:
             iregion.draw()
+        return iregion
 
     def add_iregions(self, iregions):
-        for iregion in iregions:
-            self.add_iregion(iregion)
+        for i, iregion in enumerate(iregions):
+            iregion = self.add_iregion(iregion)
+            iregions[i] = iregion
+        return iregions
 
     def add_iregion_index(self, index, iregion):
         if isinstance(index, BaseIRegion):
@@ -101,19 +111,25 @@ class BaseIView:
         self.iregions.insert(index, iregion)
         if self.drawn:
             iregion.draw()
+        return iregion
 
     def add_iregions_index(self, index, iregions):
         if isinstance(index, BaseIRegion):
             index = self.iregions.index(index)
         iregions.reverse()
-        for iregion in iregions:
-            self.add_iregion_index(index, iregion)
+        for i, iregion in enumerate(iregions):
+            iregion = self.add_iregion_index(index, iregion)
+            iregions[i] = iregion
+        iregions.reverse()
+        return iregions
 
     def del_iregion(self, iregion):
         iregion.undraw()
         index = self.iregions.index(iregion)
         del self.iregions[index]
         iregion.iview = None
+        if iregion.igroup and not [x for x in self.iregions if x.igroup == iregion.igroup]:
+            del self.igroups[self.igroups.index(iregion.igroup)]
 
     def del_iregions(self, iregions=None):
         if iregions is None:
@@ -127,6 +143,8 @@ class BaseIView:
         iregion.undraw()
         del self.iregions[index]
         iregion.iview = None
+        if iregion.igroup and not [x for x in self.iregions if x.igroup == iregion.igroup]:
+            del self.igroups[self.igroups.index(iregion.igroup)]
 
     def get_iregion(self, index):
         return self.iregions[index]
@@ -172,7 +190,7 @@ class BaseIView:
             self.view.sel().clear()
             return
         point = region.begin()
-        if event_time - self.last_event_time < 0.5:
+        if event_time - self.last_event_time < 0.1:
             self.view.sel().clear()
             return
         self.last_event_time = event_time
@@ -184,10 +202,11 @@ class BaseIView:
                 if region.contains(point) and not point == region.end():
                     iregion = [x for x in self.iregions if x.get_region() == region][0]
                     if not iregion.disabled:
-                        if hasattr(iregion, 'pre_process'):
-                            iregion.pre_process(iregion)
-                        if hasattr(iregion, 'process'):
-                            iregion.process(iregion)
-                        if hasattr(iregion, 'post_process'):
-                            iregion.post_process(iregion)
+                        handler = iregion.igroup if iregion.igroup else iregion
+                        if hasattr(handler, 'pre_process'):
+                            handler.pre_process(iregion)
+                        if hasattr(handler, 'process'):
+                            handler.process(iregion)
+                        if hasattr(handler, 'post_process'):
+                            handler.post_process(iregion)
                     return

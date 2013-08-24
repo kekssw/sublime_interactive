@@ -9,10 +9,11 @@ class BaseIRegion:
     def __init__(
         self,
         data='',
+        iview=None,
+        igroup=None,
         process=None,
         pre_process=None,
         post_process=None,
-        iview=None,
         styles=None,
         style_name='__default__',
         scope='',
@@ -21,7 +22,10 @@ class BaseIRegion:
         formatter=None,
         formatter_kwargs=None
     ):
+        self._iview = None
         self.iview = iview
+        self._igroup = None
+        self.igroup = igroup
         self.key = 'IRegion-%s-%s' % (self.__class__.__name__, id(self))
 
         self.data = data
@@ -51,6 +55,33 @@ class BaseIRegion:
         self.drawn = False
         self.disabled = False
         self.hidden = False
+
+    @property
+    def iview(self):
+        if not hasattr(self, '_iview'):
+            return None
+        return self._iview
+
+    @iview.setter
+    def iview(self, value):
+        self._iview = value
+        if value and self.igroup and not self.igroup in self.iview.igroups:
+            self.iview.igroups.append(self.igroup)
+
+    @property
+    def igroup(self):
+        if not hasattr(self, '_igroup'):
+            return None
+        return self._igroup
+
+    @igroup.setter
+    def igroup(self, value):
+        if value and self.iview is not None:
+            if not [x for x in self.iview.iregions if x.igroup == self.igroup]:
+                del self.iview.igroups[self.iview.igroups.index(self.igroup)]
+            if not value in self.iview.igroups:
+                self.iview.igroups.append(value)
+        self._igroup = value
 
     def __len__(self):
         length = len(str(self))
@@ -202,13 +233,102 @@ class BaseIRegion:
 
     def process(self, iregion):
         region = self.get_region()
-        print('Clicked: %s - %d - %d:%d %d\n\'\'\'%s\'\'\'' % (
+        print('Clicked IRegion: %s - %d - %d:%d %d\n\'\'\'%s\'\'\'' % (
             self.key,
             self.iview.view.sel()[0].begin(),
             region.begin(),
             region.end(),
             region.size(),
             self.get_formatted_data()
+            )
+        )
+
+    def pre_process(self, iregion):
+        pass
+
+    def post_process(self, iregion):
+        pass
+
+
+class BaseIGroup:
+    def __init__(
+        self,
+        label='',
+        iregions=None,
+        process=None,
+        pre_process=None,
+        post_process=None
+    ):
+        self.label = label
+        self.key = 'IGroup-%s-%s' % (self.__class__.__name__, id(self))
+
+        if pre_process is not None:
+            self.pre_process = pre_process
+        if process is not None:
+            self.process = process
+        if post_process is not None:
+            self.post_process = post_process
+
+        self.iregions = []
+        if iregions is None:
+            iregions = []
+        for iregion in iregions:
+            self.add_iregion(iregion)
+
+    def add_iregion(self, iregion):
+        if not isinstance(iregion, BaseIRegion):
+            iregion = GenericIRegion(data=iregion)
+        iregion.igroup = self
+        self.iregions.append(iregion)
+        return iregion
+
+    def add_iregions(self, iregions):
+        for i, iregion in enumerate(iregions):
+            iregion = self.add_iregion(iregion)
+            iregions[i] = iregion
+        return iregions
+
+    def del_iregion(self, iregion):
+        iregion.igroup = None
+        del self.iregions[self.iregions.index(iregion)]
+
+    def del_iregions(self, iregions=None):
+        if iregions is None:
+            iregions = self.iregions[::]
+        while iregions:
+            iregion = iregions.pop()
+            self.del_iregion(iregion)
+
+    def hide(self):
+        for iregion in self.iregions:
+            iregion.hide()
+
+    def show(self):
+        for iregion in self.iregions:
+            iregion.show()
+
+    def enable(self):
+        for iregion in self.iregions:
+            iregion.enable()
+
+    def disable(self):
+        for iregion in self.iregions:
+            iregion.disable()
+
+    def undraw(self):
+        for iregion in self.iregions:
+            iregion.undraw()
+
+    def draw(self):
+        for iregion in self.iregions:
+            iregion.draw()
+
+    def process(self, iregion):
+        region = iregion.get_region()
+        print('Clicked IGroup: %s - %s - %d' % (
+            self.key,
+            self.label,
+            iregion.iview.view.sel()[0].begin()
             )
         )
 
