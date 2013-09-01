@@ -1,6 +1,13 @@
 sublime_interactive
 ===================
 
+    NOTE: This has been replaced by [sublime_live](https://github.com/sligodave/sublime_live)
+    It is a much cleaner implementation of the same idea.
+    The main difference is that it doesn't try to do as much as this, and so leaves the developer with much more control.
+    I will no longer be working on this repository and will be removing it at the end of September 2013.
+    So fork away if you want to grab a copy!
+===================
+
 A sublime text 3 interactive view framework. Create views with clickable areas that map to functionality. Buttons, lists, sentences...
 
 ## Note:
